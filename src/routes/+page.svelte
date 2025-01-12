@@ -7,6 +7,7 @@
   <label for="password">password</label>
   <input type="password" id=password />
 </div>
+<input type="submit" />
 
 <style lang="scss">
 input {
