@@ -1,36 +1,55 @@
-resource "aws_iam_openid_connect_provider" "github" {
-  url = "https://token.actions.githubusercontent.com"
-  client_id_list = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"] # GitHub OIDC Thumbprint
-}
-
-resource "aws_iam_role" "github_actions" {
-  name = "${var.prefix}-github-actions-role"
+resource "aws_iam_role" "amplify_iam_role" {
+  name = "${var.appname}-amplify-iam-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.github.arn
-      },
-      Action = "sts:AssumeRoleWithWebIdentity",
-      Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:sub" = "repo:asunaro276/cognito-tutorial:ref:refs/heads/main"
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "amplify.amazonaws.com"
         }
       }
-    }]
+    ]
   })
-
-  # Attach necessary policies
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/AdministratorAccess" # Adjust permissions as needed
-  ]
 }
 
-# Output the IAM Role ARN for use in GitHub Actions
-output "github_actions_role_arn" {
-  description = "The ARN of the IAM role assumed by GitHub Actions"
-  value       = aws_iam_role.github_actions.arn
+resource "aws_iam_policy" "amplify_iam_policy" {
+  name = "${var.appname}-amplify-iam-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid    = "PushLogs",
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:ap-northeast-1:${data.aws_caller_identity.current.account_id}:log-group:/aws/amplify/*:log-stream:*"
+      },
+      {
+        Sid    = "CreateLogGroup",
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup"
+        ],
+        Resource = "arn:aws:logs:ap-northeast-1:${data.aws_caller_identity.current.account_id}:log-group:/aws/amplify/*"
+      },
+      {
+        Sid    = "DescribeLogGroups",
+        Effect = "Allow",
+        Action = [
+          "logs:DescribeLogGroups"
+        ],
+        Resource = "arn:aws:logs:ap-northeast-1:${data.aws_caller_identity.current.account_id}:log-group:*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "amplify_role_policy_attachment" {
+  role       = aws_iam_role.amplify_iam_role.arn
+  policy_arn = aws_iam_policy.amplify_iam_policy.arn
 }

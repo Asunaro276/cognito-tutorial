@@ -1,1 +1,1 @@
-prefix = cognito-tutorial
+appname = "cognito-tutorial"

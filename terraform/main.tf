@@ -11,14 +11,14 @@ provider "aws" {}
 
 provider "random" {}
 
-data "aws_caller_identity" "current_account" {}
+data "aws_caller_identity" "current" {}
 
-data "aws_region" "current_region" {}
+data "aws_region" "current" {}
 
 terraform {
   backend "s3" {
     bucket = "tfstate-nakano"
-    key    = "${var.prefix}/terraform.tfstate"
+    key    = "cognito-tutorial/terraform.tfstate"
     region = "ap-northeast-1"
   }
 }
