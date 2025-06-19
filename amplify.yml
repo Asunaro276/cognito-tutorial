@@ -1,12 +1,38 @@
 version: 1
 frontend:
   phases:
+    preBuild:
+      commands:
+        # Bunの最新版をインストール
+        - curl -fsSL https://bun.sh/install | bash
+        - source ~/.bashrc
+        - export PATH="$HOME/.bun/bin:$PATH"
+        # Node.js 18以上が必要
+        - node --version
+        - bun --version
+        # 依存関係のインストール
+        - bun install
     build:
       commands:
-        - echo "Building static site for Cognito OIDC tutorial"
+        - echo "Building React app with Vite and Bun"
+        - export PATH="$HOME/.bun/bin:$PATH"
+        # 環境変数の確認（デバッグ用）
+        - echo "VITE_COGNITO_USER_POOL_ID=$VITE_COGNITO_USER_POOL_ID"
+        - echo "VITE_COGNITO_USER_POOL_CLIENT_ID=$VITE_COGNITO_USER_POOL_CLIENT_ID"
+        - echo "VITE_COGNITO_DOMAIN=$VITE_COGNITO_DOMAIN"
+        # ビルド実行
+        - bun run build
+        - echo "Build completed successfully"
+        # ビルド成果物の確認
+        - ls -la dist/
   artifacts:
-    baseDirectory: .
+    # Viteのビルド出力ディレクトリ
+    baseDirectory: dist
     files:
       - '**/*'
   cache:
-    paths: [] 
+    paths:
+      # Bunの依存関係キャッシュ
+      - node_modules/**/*
+      # Bunのキャッシュディレクトリ
+      - ~/.bun/install/cache/**/* 

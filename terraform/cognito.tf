@@ -74,14 +74,14 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_flows_user_pool_client          = true
   allowed_oauth_scopes                          = ["openid", "email", "profile"]
   auth_session_validity                         = 3
-  callback_urls                                 = ["https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com"]
-  default_redirect_uri                          = "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com"
+  callback_urls                                 = ["https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com/"]
+  default_redirect_uri                          = "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com/"
   enable_propagate_additional_user_context_data = false
   enable_token_revocation                       = true
   explicit_auth_flows                           = ["ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"]
   generate_secret                               = false
   id_token_validity                             = 60
-  logout_urls                                   = ["https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com"]
+  logout_urls                                   = ["https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com/"]
   name                                          = "cognito-oidc-tutorial-client"
   prevent_user_existence_errors                 = "ENABLED"
   read_attributes                               = ["email", "name", "preferred_username"]
