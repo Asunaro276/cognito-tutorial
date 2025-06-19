@@ -70,24 +70,24 @@ resource "aws_cognito_user_pool" "pool" {
 
 resource "aws_cognito_user_pool_client" "client" {
   access_token_validity                         = 60
-  allowed_oauth_flows                           = ["code", "implicit"]
+  allowed_oauth_flows                           = ["code"]
   allowed_oauth_flows_user_pool_client          = true
-  allowed_oauth_scopes                          = ["aws.cognito.signin.user.admin", "email", "openid"]
+  allowed_oauth_scopes                          = ["openid", "email", "profile"]
   auth_session_validity                         = 3
-  callback_urls                                 = ["https://example.com"]
-  default_redirect_uri                          = null
+  callback_urls                                 = ["https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com"]
+  default_redirect_uri                          = "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com"
   enable_propagate_additional_user_context_data = false
   enable_token_revocation                       = true
   explicit_auth_flows                           = ["ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"]
-  generate_secret                               = null
+  generate_secret                               = false
   id_token_validity                             = 60
-  logout_urls                                   = []
-  name                                          = "cms-challenge-production-pool-client"
+  logout_urls                                   = ["https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.amplify_app.id}.amplifyapp.com"]
+  name                                          = "cognito-oidc-tutorial-client"
   prevent_user_existence_errors                 = "ENABLED"
-  read_attributes                               = []
+  read_attributes                               = ["email", "name", "preferred_username"]
   refresh_token_validity                        = 30
   supported_identity_providers                  = ["COGNITO"]
-  user_pool_id                                  = "ap-northeast-1_MRxAx1yWV"
+  user_pool_id                                  = aws_cognito_user_pool.pool.id
   write_attributes                              = []
   token_validity_units {
     access_token  = "minutes"
@@ -98,6 +98,6 @@ resource "aws_cognito_user_pool_client" "client" {
 
 resource "aws_cognito_user_pool_domain" "main" {
   certificate_arn = null
-  domain          = "nakano"
-  user_pool_id    = "ap-northeast-1_MRxAx1yWV"
+  domain          = "oidc-tutorial-auth"
+  user_pool_id    = aws_cognito_user_pool.pool.id
 }

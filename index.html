@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cognito OIDC Tutorial</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .auth-section {
+      border: 2px solid #007bff;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .btn {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    .user-info {
+      background-color: #e9f7ef;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+      display: none;
+    }
+
+    .loading {
+      text-align: center;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔐 Cognito OIDC Tutorial</h1>
+      <p>AWS Amplify + Amazon Cognitoを使用したOpenID Connect認証のデモ</p>
+    </div>
+
+    <div class="auth-section">
+      <h2>認証状態</h2>
+      <div id="loading" class="loading">
+        認証状態を確認中...
+      </div>
+      <div id="unauthenticated" style="display: none;">
+        <p>現在ログインしていません。</p>
+        <button class="btn" onclick="signIn()">ログイン</button>
+      </div>
+      <div id="authenticated" style="display: none;">
+        <div class="user-info">
+          <h3>ログイン済み</h3>
+          <div id="userInfo"></div>
+          <button class="btn" onclick="signOut()">ログアウト</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-section">
+      <h2>プロテクトされたコンテンツ</h2>
+      <div id="protectedContent" style="display: none;">
+        <p>🎉 おめでとうございます！認証が成功しました。</p>
+        <p>このコンテンツは認証されたユーザーのみが閲覧できます。</p>
+        <ul>
+          <li>OpenID Connect認証が正常に動作しています</li>
+          <li>Amazon Cognitoユーザープールで認証されました</li>
+          <li>AWS Amplifyでホスティングされています</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- AWS Amplify SDK -->
+  <script src="https://unpkg.com/aws-amplify@5.3.14/dist/aws-amplify.min.js"></script>
+
+  <!-- 設定ファイル -->
+  <script src="config.js"></script>
+
+  <script>
+    // Amplify設定を適用
+    if (window.amplifyConfig && window.amplifyConfig.Auth.userPoolId) {
+      try {
+        window.Amplify.configure(window.amplifyConfig);
+        console.log('Amplify configured successfully', window.amplifyConfig);
+      } catch (error) {
+        console.error('Amplify configuration error:', error);
+      }
+    } else {
+      console.warn('Amplify設定が未完了です。config.jsを確認してください。');
+    }
+
+    let currentUser = null;
+
+    // ページ読み込み時の初期化
+    window.addEventListener('DOMContentLoaded', async () => {
+      console.log('アプリケーション初期化中...');
+
+      // 設定が完了している場合は認証状態をチェック
+      if (window.amplifyConfig && window.amplifyConfig.Auth.userPoolId) {
+        await checkAuthState();
+      } else {
+        // デモ用の初期状態表示
+        showUnauthenticated();
+      }
+    });
+
+    async function checkAuthState() {
+      try {
+        const user = await window.Amplify.Auth.currentAuthenticatedUser();
+        currentUser = user;
+        showAuthenticated();
+      } catch (error) {
+        console.log('ユーザーは認証されていません');
+        showUnauthenticated();
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('unauthenticated').style.display = 'none';
+      document.getElementById('authenticated').style.display = 'none';
+      document.getElementById('protectedContent').style.display = 'none';
+    }
+
+    function showUnauthenticated() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('unauthenticated').style.display = 'block';
+      document.getElementById('authenticated').style.display = 'none';
+      document.getElementById('protectedContent').style.display = 'none';
+    }
+
+    function showAuthenticated() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('unauthenticated').style.display = 'none';
+      document.getElementById('authenticated').style.display = 'block';
+      document.getElementById('protectedContent').style.display = 'block';
+
+      if (currentUser) {
+        const userInfo = document.getElementById('userInfo');
+        userInfo.innerHTML = `
+                    <p><strong>ユーザー名:</strong> ${currentUser.username}</p>
+                    <p><strong>Email:</strong> ${currentUser.attributes?.email || 'N/A'}</p>
+                    <p><strong>認証プロバイダー:</strong> ${currentUser.attributes?.identities || 'Cognito'}</p>
+                `;
+      }
+    }
+
+    async function signIn() {
+      try {
+        showLoading();
+
+        if (window.amplifyConfig && window.amplifyConfig.Auth.userPoolId) {
+          // OIDCフローでログイン開始
+          await window.Amplify.Auth.federatedSignIn();
+        } else {
+          // デモ用アラート
+          alert('実際のCognito設定を完了した後、このボタンでOIDCログインが開始されます');
+          showUnauthenticated();
+        }
+      } catch (error) {
+        console.error('ログインエラー:', error);
+        alert('ログインに失敗しました: ' + error.message);
+        showUnauthenticated();
+      }
+    }
+
+    async function signOut() {
+      try {
+        showLoading();
+
+        if (window.amplifyConfig && window.amplifyConfig.Auth.userPoolId) {
+          await window.Amplify.Auth.signOut();
+        }
+
+        currentUser = null;
+        showUnauthenticated();
+      } catch (error) {
+        console.error('ログアウトエラー:', error);
+        alert('ログアウトに失敗しました: ' + error.message);
+      }
+    }
+
+    // URLパラメータを確認（OAuth認証後のリダイレクト処理）
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('code')) {
+      console.log('OAuth認証コードを検出しました');
+      // TODO: 実際のAmplify設定後に有効化
+    }
+  </script>
+</body>
+
+</html>
