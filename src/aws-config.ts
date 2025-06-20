@@ -1,8 +1,26 @@
 import type { ResourcesConfig } from 'aws-amplify';
 
-// この設定は通常、Terraformの出力値から取得されます
-// 実際の値は、Terraform apply後に更新する必要があります
-export const amplifyConfig: ResourcesConfig = {
+// 開発環境でのモック設定
+const mockConfig: ResourcesConfig = {
+  Auth: {
+    Cognito: {
+      userPoolId: 'mock-pool-id',
+      userPoolClientId: 'mock-client-id',
+      loginWith: {
+        oauth: {
+          domain: 'mock-domain.com',
+          scopes: ['openid', 'email', 'profile'],
+          redirectSignIn: [window.location.origin + '/'],
+          redirectSignOut: [window.location.origin + '/'],
+          responseType: 'code',
+        },
+      },
+    },
+  },
+};
+
+// 本番環境設定
+const prodConfig: ResourcesConfig = {
   Auth: {
     Cognito: {
       userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || 'ap-northeast-1_sDDwUYPJe',
@@ -18,4 +36,10 @@ export const amplifyConfig: ResourcesConfig = {
       },
     },
   },
-}; 
+};
+
+// 環境に応じて設定を切り替え
+const isDevelopment = import.meta.env.DEV;
+const useMockAuth = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
+
+export const amplifyConfig: ResourcesConfig = (isDevelopment && useMockAuth) ? mockConfig : prodConfig; 

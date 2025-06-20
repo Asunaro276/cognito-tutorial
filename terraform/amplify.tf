@@ -22,9 +22,6 @@ resource "aws_amplify_app" "amplify_app" {
 
   platform = "WEB"
 
-  # 手動デプロイの場合はIAMロールは不要
-  # iam_service_role_arn = aws_iam_role.amplify_iam_role.arn
-
   tags = {
     Name = var.appname
   }
